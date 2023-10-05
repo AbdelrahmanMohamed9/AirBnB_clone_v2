@@ -1,38 +1,50 @@
-# Configures a web server for deployment of web_static.
+# Configure nginx server similar to task 0 with puppet
 
-# Nginx configuration file
-$nginx_conf = "server {
-    listen 80 default_server;
-    listen [::]:80 default_server;
-    add_header X-Served-By ${hostname};
-    root   /var/www/html;
-    index  index.html index.htm;
+exec {'update':
+  provider => shell,
+  command  => 'sudo apt -y update',
+  before   => Exec['install and start nginx']
+}
 
-    location /hbnb_static {
-        alias /data/web_static/current;
-        index index.html index.htm;
-    }
+exec {'install and start nginx':
+  provider => shell,
+  command  => 'sudo apt -y install nginx ; sudo service nginx start',
+  before   => Exec['make directories']
+}
 
-    location /redirect_me {
-        return 301 http://cuberule.com/;
-    }
+exec {'make directories':
+  provider => shell,
+  command  => 'sudo mkdir -p /data/web_static/releases/test/ ; sudo mkdir -p /data/web_static/shared/',
+  before   => Exec['add mock html']
+}
 
-    error_page 404 /404.html;
-    location /404 {
-      root /var/www/html;
-      internal;
-    }
-}"
+exec {'add mock html':
+  provider => shell,
+  command  => 'sudo echo "Holberton School Test" > /data/web_static/releases/test/index.html',
+  before   => Exec['create symbolic link']
+}
 
-package { 'nginx':
-  ensure   => 'present',
-  provider => 'apt'
-} ->
+exec {'create symbolic link':
+  provider => shell,
+  command  => 'sudo ln -sf /data/web_static/releases/test/ /data/web_static/current',
+  before   => Exec['put location']
+}
 
-file { '/data':
-  ensure  => 'directory'
-} ->
+exec {'put location':
+  provider => shell,
+  command  => 'sudo sed -i "38i\\tlocation /hbnb_static/ {\n\t\talias /data/web_static/current/;\n\t\tautoindex off;\n\t}\n" /etc/nginx/sites-available/default',
+  before   => Exec['restart nginx']
+}
 
-file { '/data/web_static':
-  ensure => 'directory'
-} ->
+exec {'restart nginx':
+  provider => shell,
+  command  => 'sudo service nginx restart',
+  before   => File['/data/']
+}
+
+file {'/data/':
+  ensure  => directory,
+  owner   => 'ubuntu',
+  group   => 'ubuntu',
+  recurse => true
+}
