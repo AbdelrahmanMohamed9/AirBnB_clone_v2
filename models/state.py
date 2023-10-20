@@ -1,35 +1,35 @@
 #!/usr/bin/python3
-""" State class """
-import shlex
-import models
-from models.city import City
-from models.base_model import BaseModel, Base
-from sqlalchemy import Column, Integer, String
-from sqlalchemy.orm import relationship
+''' State Module for HBNB project '''
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import Column, Integer, String
+from models.base_model import BaseModel, Base
+from sqlalchemy.orm import relationship
+from models.city import City
+import models
+import shlex
 
 
 class State(BaseModel, Base):
-    """ Class for State
+    '''This is the class for State
     Attributes:
         name: input name
-    """
-    __tablename__ = "states"
+    '''
+    __tablename__ = 'states'
     name = Column(String(128), nullable=False)
-    cities = relationship("City", cascade='all, delete, delete-orphan',
-                          backref="state")
+    cities = relationship('City', cascade='all, delete, delete-orphan',
+                          backref='state')
 
     @property
     def cities(self):
-        var = models.storage.all()
-        lista = []
+        store = models.storage.all()
+        a_list = []
         result = []
-        for key in var:
+        for key in store:
             city = key.replace('.', ' ')
             city = shlex.split(city)
             if (city[0] == 'City'):
-                lista.append(var[key])
-        for elem in lista:
-            if (elem.state_id == self.id):
-                result.append(elem)
+                a_list.append(store[key])
+        for item in a_list:
+            if (item.state_id == self.id):
+                result.append(item)
         return (result)
